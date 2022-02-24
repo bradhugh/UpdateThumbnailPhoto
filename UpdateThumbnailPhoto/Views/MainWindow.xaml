@@ -22,7 +22,7 @@
             </Grid.ColumnDefinitions>
             <Button Grid.Column="0" Margin="10, 0, 10, 0" Command="{Binding BrowseCommand}">Choose new photo</Button>
             <Button Grid.Column="2" Margin="10, 0, 10, 0" Command="{Binding UploadCommand}">Upload</Button>
-            <Button Grid.Column="1" Margin="10, 0, 10, 0">Remove current photo</Button>
+            <Button Grid.Column="1" Margin="10, 0, 10, 0" Command="{Binding DeletePhotoCommand}">Remove current photo</Button>
         </Grid>
     </Grid>
 </Window>

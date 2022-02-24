@@ -2,8 +2,8 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFrameworks>net6.0-windows10.0.17763.0;net462</TargetFrameworks>
-    <!-- <TargetFrameworks>net462</TargetFrameworks> -->
+    <TargetFrameworks>net6.0-windows10.0.17763.0</TargetFrameworks>
+    <!-- <TargetFrameworks>net6.0-windows10.0.17763.0;net462</TargetFrameworks> -->
     <UseWPF>true</UseWPF>
   </PropertyGroup>
   

@@ -27,7 +27,7 @@
         /// <summary>
         /// The photo service.
         /// </summary>
-        private readonly PhotoService photoService;
+        private readonly IPhotoService photoService;
 
         /// <summary>
         /// The user photo file data.
@@ -49,11 +49,12 @@
         /// </summary>
         /// <param name="filePicker">The file picker.</param>
         /// <param name="photoService">The photo service.</param>
-        public MainViewModel(IFilePickerService filePicker, PhotoService photoService)
+        public MainViewModel(IFilePickerService filePicker, IPhotoService photoService)
         {
             this.BrowseCommand = new RelayCommand(this.PickPhoto);
             this.UploadCommand = new AsyncRelayCommand(this.UploadPhotoAsync, this.CanExecuteUploadPhoto);
             this.LoadPhotoCommand = new AsyncRelayCommand(this.LoadPhotoAsync);
+            this.DeletePhotoCommand = new AsyncRelayCommand(this.DeletePhotoAsync, this.CanExecuteDeletePhoto);
             this.filePicker = filePicker;
             this.photoService = photoService;
             this.PropertyChanged += OnPropertyChanged;
@@ -102,6 +103,11 @@
         public AsyncRelayCommand LoadPhotoCommand { get; private set; }
 
         /// <summary>
+        /// Gets the delete photo command that deletes the photo from Azure AD.
+        /// </summary>
+        public AsyncRelayCommand DeletePhotoCommand { get; private set; }
+
+        /// <summary>
         /// Fires when a property on the view model changes.
         /// </summary>
         /// <param name="sender">The event sender.</param>
@@ -127,8 +133,13 @@
 
                         this.Photo = image;
                     }
+                    else
+                    {
+                        this.Photo = null;
+                    }
 
                     this.UploadCommand.NotifyCanExecuteChanged();
+                    this.DeletePhotoCommand.NotifyCanExecuteChanged();
                     break;
 
                 case nameof(this.FileDataDirty):
@@ -181,7 +192,27 @@
         /// <returns>A task.</returns>
         private async Task LoadPhotoAsync()
         {
-            this.FileData = await this.photoService.GetMyPhotoAsync();
+            this.FileData = await this.photoService.GetPhotoAsync();
+            this.FileDataDirty = false;
+        }
+
+        /// <summary>
+        /// A method to determine whether DeletePhoto command can execute.
+        /// </summary>
+        /// <returns>True if can execute.</returns>
+        private bool CanExecuteDeletePhoto()
+        {
+            return this.FileData?.Length > 0;
+        }
+
+        /// <summary>
+        /// Deletes the user photo from Azure AD.
+        /// </summary>
+        /// <returns>A task.</returns>
+        private async Task DeletePhotoAsync()
+        {
+            await this.photoService.DeletePhotoAsync();
+            this.FileData = null;
             this.FileDataDirty = false;
         }
     }

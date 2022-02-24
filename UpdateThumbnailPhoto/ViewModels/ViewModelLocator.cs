@@ -24,7 +24,7 @@
             services.AddTransient<IConfigService, ConfigService>();
             services.AddTransient<IFilePickerService, FilePickerService>();
             services.AddTransient<IAuthService, AuthService>();
-            services.AddTransient<PhotoService>();
+            services.AddTransient<IPhotoService, PhotoService>();
 
             Ioc.Default.ConfigureServices(services.BuildServiceProvider());
         }

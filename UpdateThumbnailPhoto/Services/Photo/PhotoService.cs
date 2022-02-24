@@ -10,7 +10,7 @@
     /// <summary>
     /// A photo service for interacting with the user photo.
     /// </summary>
-    internal class PhotoService
+    internal class PhotoService : IPhotoService
     {
         /// <summary>
         /// The URI to get information about the authenticated user.
@@ -38,6 +38,11 @@
         private HttpClient httpClient = new HttpClient();
 
         /// <summary>
+        /// A lazy-loaded authenticated user.
+        /// </summary>
+        private Lazy<User> authenticatedUser;
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="PhotoService"/> class.
         /// </summary>
         /// <param name="authService">The authentication service.</param>
@@ -46,26 +51,21 @@
         {
             this.authService = authService;
             this.config = config;
+            this.authenticatedUser = new Lazy<User>(() => this.LookupAuthenticatedUserAsync().GetAwaiter().GetResult());
         }
 
-        /// <summary>
-        /// Gets the current user's photo.
-        /// </summary>
-        /// <returns>The photo bytes.</returns>
-        public async Task<byte[]> GetMyPhotoAsync()
+        /// <inheritdoc/>
+        public async Task<byte[]> GetPhotoAsync()
         {
             var authToken = await this.authService.GetAuthTokenAsync();
 
             this.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", authToken);
 
-            var user = await this.LookupAuthenticatedUserAsync();
-            if (string.IsNullOrEmpty(user?.UserPrincipalName))
-            {
-                throw new Exception("User does not have a valid UserPrincipalName");
-            }
+            var user = this.authenticatedUser.Value;
 
             var response = await this.httpClient.GetAsync(
-                string.Format(ThumbnailPhotoTemplate, Uri.EscapeDataString(this.config.TenantId), Uri.EscapeDataString(user.UserPrincipalName)));
+                string.Format(ThumbnailPhotoTemplate, Uri.EscapeDataString(this.config.TenantId), Uri.EscapeDataString(user.UserPrincipalName)))
+                .ConfigureAwait(false);
 
             if (response.StatusCode == HttpStatusCode.NotFound)
             {
@@ -79,29 +79,40 @@
             return photo;
         }
 
-        /// <summary>
-        /// Uploads the current user's photo.
-        /// </summary>
-        /// <param name="content">The photo content.</param>
-        /// <returns>A task.</returns>
+        /// <inheritdoc/>
+        public async Task DeletePhotoAsync()
+        {
+            var authToken = await this.authService.GetAuthTokenAsync();
+
+            this.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", authToken);
+
+            var user = this.authenticatedUser.Value;
+
+            var httpContent = new ByteArrayContent(Array.Empty<byte>());
+            httpContent.Headers.ContentType = new MediaTypeHeaderValue("images/*");
+
+            var response = await this.httpClient.PutAsync(
+                string.Format(ThumbnailPhotoTemplate, this.config.TenantId, Uri.EscapeDataString(user.UserPrincipalName)),
+                httpContent).ConfigureAwait(false);
+
+            response.EnsureSuccessStatusCode();
+        }
+
+        /// <inheritdoc/>
         public async Task UploadPhotoAsync(byte[] content)
         {
             var authToken = await this.authService.GetAuthTokenAsync();
 
             this.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", authToken);
 
-            var user = await this.LookupAuthenticatedUserAsync();
-            if (string.IsNullOrEmpty(user?.UserPrincipalName))
-            {
-                throw new Exception("User does not have a valid UserPrincipalName");
-            }
+            var user = this.authenticatedUser.Value;
 
             var httpContent = new ByteArrayContent(content);
             httpContent.Headers.ContentType = new MediaTypeHeaderValue("images/*");
 
             var response = await this.httpClient.PutAsync(
                 string.Format(ThumbnailPhotoTemplate, this.config.TenantId, Uri.EscapeDataString(user.UserPrincipalName)),
-                httpContent);
+                httpContent).ConfigureAwait(false);
 
             response.EnsureSuccessStatusCode();
         }
@@ -116,7 +127,7 @@
 
             this.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", authToken);
 
-            var user = await this.httpClient.GetFromJsonAsync<User>(MyUserUri);
+            var user = await this.httpClient.GetFromJsonAsync<User>(MyUserUri).ConfigureAwait(false);
             if (user == null)
             {
                 throw new Exception("User lookup failed");
