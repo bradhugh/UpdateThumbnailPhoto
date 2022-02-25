@@ -52,9 +52,9 @@
         public MainViewModel(IFilePickerService filePicker, IPhotoService photoService)
         {
             this.BrowseCommand = new RelayCommand(this.PickPhoto);
-            this.UploadCommand = new AsyncRelayCommand(this.UploadPhotoAsync, this.CanExecuteUploadPhoto);
+            this.UploadCommand = new AsyncRelayCommand(this.UploadPhotoAsync, () => this.FileData?.Length > 0 && this.FileDataDirty);
             this.LoadPhotoCommand = new AsyncRelayCommand(this.LoadPhotoAsync);
-            this.DeletePhotoCommand = new AsyncRelayCommand(this.DeletePhotoAsync, this.CanExecuteDeletePhoto);
+            this.DeletePhotoCommand = new AsyncRelayCommand(this.DeletePhotoAsync, () => this.FileData?.Length > 0);
             this.filePicker = filePicker;
             this.photoService = photoService;
             this.PropertyChanged += OnPropertyChanged;
@@ -164,15 +164,6 @@
         }
 
         /// <summary>
-        /// Checks whether the state is valid for the user to click the Upload button.
-        /// </summary>
-        /// <returns>True if upload is allowed.</returns>
-        private bool CanExecuteUploadPhoto()
-        {
-            return this.FileData?.Length > 0 && this.FileDataDirty;
-        }
-
-        /// <summary>
         /// Uploads the current photo.
         /// </summary>
         /// <returns>A task.</returns>
@@ -194,15 +185,6 @@
         {
             this.FileData = await this.photoService.GetPhotoAsync();
             this.FileDataDirty = false;
-        }
-
-        /// <summary>
-        /// A method to determine whether DeletePhoto command can execute.
-        /// </summary>
-        /// <returns>True if can execute.</returns>
-        private bool CanExecuteDeletePhoto()
-        {
-            return this.FileData?.Length > 0;
         }
 
         /// <summary>

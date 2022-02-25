@@ -13,7 +13,7 @@
         public bool PickFile(out string filePath)
         {
             OpenFileDialog dialog = new OpenFileDialog();
-            dialog.Filter = "Image files (*.jpg)|*.jpg|All files (*.*)|*.*";
+            dialog.Filter = "Image files (*.jpg,*.jpeg)|*.jpg;*.jpeg|All files (*.*)|*.*";
             var result = dialog.ShowDialog();
             filePath = dialog.FileName;
             return result == true && !string.IsNullOrEmpty(filePath);
